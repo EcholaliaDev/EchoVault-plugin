@@ -1,0 +1,19 @@
+[
+  {
+    "Author": "EchoVaultDev",
+    "Name": "Echo",
+    "InternalName": "Echo",
+    "AssemblyVersion": "0.4.0.0",
+    "Description": "Records players you encounter and syncs them to the EchoVault community index. Browse at echovault.gg.",
+    "ApplicableVersion": "any",
+    "RepoUrl": "https://github.com/EchoVaultDev/EchoVault-plugin",
+    "Tags": ["players", "index", "social"],
+    "DalamudApiLevel": 15,
+    "Punchline": "See the players you have crossed paths with.",
+    "DownloadLinkInstall": "https://github.com/EchoVaultDev/EchoVault-plugin/releases/download/v0.4.0/latest.zip",
+    "DownloadLinkUpdate": "https://github.com/EchoVaultDev/EchoVault-plugin/releases/download/v0.4.0/latest.zip",
+    "DownloadLinkTesting": "https://github.com/EchoVaultDev/EchoVault-plugin/releases/download/v0.4.0/latest.zip",
+    "IsHide": false,
+    "IsTestingExclusive": false
+  }
+]
