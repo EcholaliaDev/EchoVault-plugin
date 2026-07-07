@@ -58,6 +58,6 @@ Every removal request is reviewed. Hiding and removal take effect within minutes
 
 ## Support
 
-Found a bug or have a question? [Open a GitHub Issue](https://github.com/EchoVaultDev/EchoVault-plugin/issues/new/choose) in this repository.
+Found a bug or have a question? [Open a GitHub Issue](https://github.com/EchoVaultDev/EchoVault-plugin/issues/new/choose) in this repository, or join the community on [Discord](https://discord.gg/fgpMDedg7C).
 
-For data or removal requests, use [echovault.gg/removal](https://echovault.gg/removal) — do not post identifying details in a public issue.
+For data or removal requests, use [echovault.gg/removal](https://echovault.gg/removal) — do not post identifying details in a public issue or in Discord.
