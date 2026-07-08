@@ -115,4 +115,15 @@ public sealed class PluginState
 			};
 		}
 	}
+
+	public void SetContextMenuLinkEnabled(bool v)
+	{
+		lock (_lock)
+		{
+			_snapshot = _snapshot with
+			{
+				ContextMenuLinkEnabled = v
+			};
+		}
+	}
 }

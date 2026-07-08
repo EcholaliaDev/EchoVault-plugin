@@ -22,7 +22,7 @@ public sealed class Plugin : IDalamudPlugin, IDisposable
 
 	private const string ServerBaseUrl = "https://echovault.gg";
 
-	internal const string PluginVersion = "0.4.1";
+	internal const string PluginVersion = "0.5.0";
 
 	private readonly ICommandManager _commands;
 
@@ -73,21 +73,21 @@ public sealed class Plugin : IDalamudPlugin, IDisposable
 		_commands = commands;
 		_chat = chatGui;
 		_objectTable = objectTable;
-		string configDir = pluginInterface.GetPluginConfigDirectory();
-		Outbox = new Outbox(Path.Combine(configDir, "outbox.jsonl"), 10485760L);
-		KeyStore keys = new KeyStore(Path.Combine(configDir, "keys.bin"), new DpapiKeyProtector());
+		string pluginConfigDirectory = pluginInterface.GetPluginConfigDirectory();
+		Outbox = new Outbox(Path.Combine(pluginConfigDirectory, "outbox.jsonl"), 10485760L);
+		KeyStore keyStore = new KeyStore(Path.Combine(pluginConfigDirectory, "keys.bin"), new DpapiKeyProtector());
 		_http = new HttpClient
 		{
 			BaseAddress = new Uri("https://echovault.gg")
 		};
-		_client = new EchoApiClient(_http, keys);
+		_client = new EchoApiClient(_http, keyStore);
 		DrainLoop drain = new DrainLoop(Outbox, _client, new BackoffPolicy(), State);
-		StoredCredentials storedCreds = keys.Load();
-		if ((object)storedCreds != null)
+		StoredCredentials storedCredentials = keyStore.Load();
+		if ((object)storedCredentials != null)
 		{
 			PluginState state = State;
 			bool flag;
-			switch (storedCreds.Tier)
+			switch (storedCredentials.Tier)
 			{
 			case "standard":
 			case "trusted":
@@ -119,7 +119,7 @@ public sealed class Plugin : IDalamudPlugin, IDisposable
 		};
 		_drainTask = Task.Run(async delegate
 		{
-			await drain.RunAsync("0.4.1", _cts.Token);
+			await drain.RunAsync("0.5.0", _cts.Token);
 		}, _cts.Token);
 		_settingsWindow = new SettingsWindow(State, _client, objectTable, log);
 		_windows.AddWindow((IWindow)(object)_settingsWindow);
@@ -158,24 +158,24 @@ public sealed class Plugin : IDalamudPlugin, IDisposable
 	{
 		try
 		{
-			IPlayerCharacter local = _objectTable.LocalPlayer;
-			if (local == null)
+			IPlayerCharacter localPlayer = _objectTable.LocalPlayer;
+			if (localPlayer == null)
 			{
 				_chat.Print("Echo: log in to a character first.", (string)null, (ushort?)null);
 				return;
 			}
-			ulong contentId = ReadContentId(local);
-			string name = ((IGameObject)local).Name.TextValue;
-			uint world = local.HomeWorld.RowId;
-			if (contentId == 0L)
+			ulong num = ReadContentId(localPlayer);
+			string textValue = ((IGameObject)localPlayer).Name.TextValue;
+			uint rowId = localPlayer.HomeWorld.RowId;
+			if (num == 0L)
 			{
 				_chat.Print("Echo: could not read the character id - try again in a moment.", (string)null, (ushort?)null);
 				return;
 			}
-			LinkStartResult result = await _client.LinkStartAsync(new LinkStartRequest(2, contentId, name, world), _cts.Token);
+			LinkStartResult linkStartResult = await _client.LinkStartAsync(new LinkStartRequest(2, num, textValue, rowId), _cts.Token);
 			IChatGui chat = _chat;
-			LinkStartResponse resp = result.Response;
-			chat.Print(((object)resp != null) ? ("Echo: claim code " + resp.Code + " - enter it at echovault.gg/me within 10 minutes. The /echovault window shows it with a copy button.") : ("Echo: " + LinkClaimMessages.Describe(result.Error)), (string)null, (ushort?)null);
+			LinkStartResponse response = linkStartResult.Response;
+			chat.Print(((object)response != null) ? ("Echo: claim code " + response.Code + " - enter it at echovault.gg/me within 10 minutes. The /echovault window shows it with a copy button.") : ("Echo: " + LinkClaimMessages.Describe(linkStartResult.Error)), (string)null, (ushort?)null);
 		}
 		catch (Exception)
 		{

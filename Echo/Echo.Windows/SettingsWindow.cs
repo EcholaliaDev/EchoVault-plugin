@@ -43,7 +43,7 @@ public sealed class SettingsWindow : Window
 	private volatile bool _claimBusy;
 
 	public SettingsWindow(PluginState state, EchoApiClient client, IObjectTable objectTable, IPluginLog log)
-		: base("Echo v0.4.1###EchoSettings")
+		: base("Echo v0.5.0###EchoSettings")
 	{
 		_state = state;
 		_client = client;
@@ -63,65 +63,71 @@ public sealed class SettingsWindow : Window
 		//IL_0111: Unknown result type (might be due to invalid IL or missing references)
 		//IL_0153: Unknown result type (might be due to invalid IL or missing references)
 		//IL_017b: Unknown result type (might be due to invalid IL or missing references)
-		//IL_01da: Unknown result type (might be due to invalid IL or missing references)
-		//IL_01f8: Unknown result type (might be due to invalid IL or missing references)
-		//IL_01c6: Unknown result type (might be due to invalid IL or missing references)
-		//IL_0230: Unknown result type (might be due to invalid IL or missing references)
-		//IL_021c: Unknown result type (might be due to invalid IL or missing references)
-		//IL_028e: Unknown result type (might be due to invalid IL or missing references)
-		//IL_029a: Unknown result type (might be due to invalid IL or missing references)
-		//IL_02cf: Unknown result type (might be due to invalid IL or missing references)
-		PluginStateSnapshot snap = _state.Snapshot();
+		//IL_01a3: Unknown result type (might be due to invalid IL or missing references)
+		//IL_0202: Unknown result type (might be due to invalid IL or missing references)
+		//IL_0220: Unknown result type (might be due to invalid IL or missing references)
+		//IL_01ee: Unknown result type (might be due to invalid IL or missing references)
+		//IL_0258: Unknown result type (might be due to invalid IL or missing references)
+		//IL_0244: Unknown result type (might be due to invalid IL or missing references)
+		//IL_02b6: Unknown result type (might be due to invalid IL or missing references)
+		//IL_02c2: Unknown result type (might be due to invalid IL or missing references)
+		//IL_02f7: Unknown result type (might be due to invalid IL or missing references)
+		PluginStateSnapshot pluginStateSnapshot = _state.Snapshot();
 		ImU8String val = default(ImU8String);
 		((ImU8String)(ref val))._002Ector(9, 1);
 		((ImU8String)(ref val)).AppendLiteral("Account: ");
-		((ImU8String)(ref val)).AppendFormatted<RegistrationStatus>(snap.Registration);
+		((ImU8String)(ref val)).AppendFormatted<RegistrationStatus>(pluginStateSnapshot.Registration);
 		ImGui.TextUnformatted(val);
 		ImU8String val2 = default(ImU8String);
 		((ImU8String)(ref val2))._002Ector(16, 1);
 		((ImU8String)(ref val2)).AppendLiteral("Outbox: ");
-		((ImU8String)(ref val2)).AppendFormatted<int>(snap.OutboxDepth);
+		((ImU8String)(ref val2)).AppendFormatted<int>(pluginStateSnapshot.OutboxDepth);
 		((ImU8String)(ref val2)).AppendLiteral(" pending");
 		ImGui.TextUnformatted(val2);
-		DateTimeOffset? lastUploadAt = snap.LastUploadAt;
+		DateTimeOffset? lastUploadAt = pluginStateSnapshot.LastUploadAt;
 		if (lastUploadAt.HasValue)
 		{
-			DateTimeOffset last = lastUploadAt.GetValueOrDefault();
+			DateTimeOffset valueOrDefault = lastUploadAt.GetValueOrDefault();
 			ImU8String val3 = default(ImU8String);
 			((ImU8String)(ref val3))._002Ector(13, 1);
 			((ImU8String)(ref val3)).AppendLiteral("Last upload: ");
-			((ImU8String)(ref val3)).AppendFormatted<DateTimeOffset>(last.ToLocalTime(), "HH:mm:ss");
+			((ImU8String)(ref val3)).AppendFormatted<DateTimeOffset>(valueOrDefault.ToLocalTime(), "HH:mm:ss");
 			ImGui.TextUnformatted(val3);
 		}
-		if (!snap.ServerAllowsIngest)
+		if (!pluginStateSnapshot.ServerAllowsIngest)
 		{
 			Vector4 vector = new Vector4(1f, 0.7f, 0.2f, 1f);
 			ImGui.TextColored(ref vector, ImU8String.op_Implicit("Uploads disabled by server (update Echo?)."));
 		}
-		string error = snap.LastError;
-		if (error != null)
+		string lastError = pluginStateSnapshot.LastError;
+		if (lastError != null)
 		{
 			Vector4 vector = new Vector4(1f, 0.3f, 0.3f, 1f);
-			ImGui.TextColored(ref vector, ImU8String.op_Implicit(error));
+			ImGui.TextColored(ref vector, ImU8String.op_Implicit(lastError));
 		}
 		ImGui.Separator();
-		bool capture = snap.CaptureEnabled;
-		if (ImGui.Checkbox(ImU8String.op_Implicit("Enable capture"), ref capture))
+		bool captureEnabled = pluginStateSnapshot.CaptureEnabled;
+		if (ImGui.Checkbox(ImU8String.op_Implicit("Enable capture"), ref captureEnabled))
 		{
-			_state.SetCaptureEnabled(capture);
+			_state.SetCaptureEnabled(captureEnabled);
 		}
-		bool social = snap.SocialCaptureEnabled;
-		if (ImGui.Checkbox(ImU8String.op_Implicit("Capture party/FC/friend lists"), ref social))
+		bool socialCaptureEnabled = pluginStateSnapshot.SocialCaptureEnabled;
+		if (ImGui.Checkbox(ImU8String.op_Implicit("Capture party/FC/friend lists"), ref socialCaptureEnabled))
 		{
-			_state.SetSocialCaptureEnabled(social);
+			_state.SetSocialCaptureEnabled(socialCaptureEnabled);
 		}
-		bool nameCache = snap.NameCacheCaptureEnabled;
-		if (ImGui.Checkbox(ImU8String.op_Implicit("Capture Party Finder & lookups"), ref nameCache))
+		bool nameCacheCaptureEnabled = pluginStateSnapshot.NameCacheCaptureEnabled;
+		if (ImGui.Checkbox(ImU8String.op_Implicit("Capture Party Finder & lookups"), ref nameCacheCaptureEnabled))
 		{
-			_state.SetNameCacheCaptureEnabled(nameCache);
+			_state.SetNameCacheCaptureEnabled(nameCacheCaptureEnabled);
+		}
+		bool contextMenuLinkEnabled = pluginStateSnapshot.ContextMenuLinkEnabled;
+		if (ImGui.Checkbox(ImU8String.op_Implicit("Show 'View on EchoVault' when right-clicking players"), ref contextMenuLinkEnabled))
+		{
+			_state.SetContextMenuLinkEnabled(contextMenuLinkEnabled);
 		}
 		ImGui.Separator();
-		if (snap.Registration == RegistrationStatus.Verified)
+		if (pluginStateSnapshot.Registration == RegistrationStatus.Verified)
 		{
 			Vector4 vector = new Vector4(0.4f, 0.9f, 0.4f, 1f);
 			ImGui.TextColored(ref vector, ImU8String.op_Implicit("Verified - your uploads go live immediately."));
@@ -186,22 +192,22 @@ public sealed class SettingsWindow : Window
 		{
 			StartClaimAsync();
 		}
-		DateTimeOffset expiresAt = new DateTimeOffset(Interlocked.Read(in _claimCodeExpiresAtTicks), TimeSpan.Zero);
-		if (_claimCode.Length > 0 && expiresAt > DateTimeOffset.UtcNow)
+		DateTimeOffset dateTimeOffset = new DateTimeOffset(Interlocked.Read(in _claimCodeExpiresAtTicks), TimeSpan.Zero);
+		if (_claimCode.Length > 0 && dateTimeOffset > DateTimeOffset.UtcNow)
 		{
-			string code = _claimCode;
+			string claimCode = _claimCode;
 			ImGui.SetNextItemWidth(120f);
-			ImGui.InputText(ImU8String.op_Implicit("##echoClaimCode"), ref code, 16, (ImGuiInputTextFlags)16384, (ImGuiInputTextCallbackDelegate)null);
+			ImGui.InputText(ImU8String.op_Implicit("##echoClaimCode"), ref claimCode, 16, (ImGuiInputTextFlags)16384, (ImGuiInputTextCallbackDelegate)null);
 			ImGui.SameLine();
 			if (ImGui.Button(ImU8String.op_Implicit("Copy"), default(Vector2)))
 			{
 				ImGui.SetClipboardText(ImU8String.op_Implicit(_claimCode));
 			}
-			TimeSpan left = expiresAt - DateTimeOffset.UtcNow;
+			TimeSpan timeSpan = dateTimeOffset - DateTimeOffset.UtcNow;
 			ImU8String val = default(ImU8String);
 			((ImU8String)(ref val))._002Ector(42, 1);
 			((ImU8String)(ref val)).AppendLiteral("Enter it at echovault.gg/me - expires in ");
-			((ImU8String)(ref val)).AppendFormatted<TimeSpan>(left, "m\\:ss");
+			((ImU8String)(ref val)).AppendFormatted<TimeSpan>(timeSpan, "m\\:ss");
 			((ImU8String)(ref val)).AppendLiteral(".");
 			ImGui.TextUnformatted(val);
 		}
@@ -216,32 +222,32 @@ public sealed class SettingsWindow : Window
 		_claimBusy = true;
 		try
 		{
-			IPlayerCharacter local = _objectTable.LocalPlayer;
-			if (local == null)
+			IPlayerCharacter localPlayer = _objectTable.LocalPlayer;
+			if (localPlayer == null)
 			{
 				_claimStatus = "Log in to a character first.";
 				return;
 			}
-			ulong contentId = ReadContentId(local);
-			string name = ((IGameObject)local).Name.TextValue;
-			uint world = local.HomeWorld.RowId;
-			if (contentId == 0L)
+			ulong num = ReadContentId(localPlayer);
+			string textValue = ((IGameObject)localPlayer).Name.TextValue;
+			uint rowId = localPlayer.HomeWorld.RowId;
+			if (num == 0L)
 			{
 				_claimStatus = "Could not read the character id - try again in a moment.";
 				return;
 			}
-			LinkStartResult result = await _client.LinkStartAsync(new LinkStartRequest(2, contentId, name, world), CancellationToken.None);
-			LinkStartResponse resp = result.Response;
-			if ((object)resp != null)
+			LinkStartResult linkStartResult = await _client.LinkStartAsync(new LinkStartRequest(2, num, textValue, rowId), CancellationToken.None);
+			LinkStartResponse response = linkStartResult.Response;
+			if ((object)response != null)
 			{
-				_claimCode = resp.Code;
-				Interlocked.Exchange(ref _claimCodeExpiresAtTicks, resp.ExpiresAt.UtcTicks);
+				_claimCode = response.Code;
+				Interlocked.Exchange(ref _claimCodeExpiresAtTicks, response.ExpiresAt.UtcTicks);
 				_claimStatus = "";
 			}
 			else
 			{
 				_claimCode = "";
-				_claimStatus = Capitalize(LinkClaimMessages.Describe(result.Error));
+				_claimStatus = Capitalize(LinkClaimMessages.Describe(linkStartResult.Error));
 			}
 		}
 		catch (Exception ex)
@@ -306,35 +312,35 @@ public sealed class SettingsWindow : Window
 		_verifyBusy = true;
 		try
 		{
-			IPlayerCharacter local = _objectTable.LocalPlayer;
-			if (local == null)
+			IPlayerCharacter localPlayer = _objectTable.LocalPlayer;
+			if (localPlayer == null)
 			{
 				_verifyStatus = "Log in to a character first.";
 				return;
 			}
-			ulong localContentId = ReadContentId(local);
-			if (localContentId == 0L)
+			ulong num = ReadContentId(localPlayer);
+			if (num == 0L)
 			{
 				_verifyStatus = "Log in to a character first.";
 				return;
 			}
-			string name = ((IGameObject)local).Name.TextValue;
-			World value = local.HomeWorld.Value;
-			ReadOnlySeString name2 = ((World)(ref value)).Name;
-			string homeWorldName = ((ReadOnlySeString)(ref name2)).ExtractText();
-			string lodestoneId = _lodestoneId.Trim();
-			if (lodestoneId.Length == 0 || !lodestoneId.All(char.IsAsciiDigit))
+			string textValue = ((IGameObject)localPlayer).Name.TextValue;
+			World value = localPlayer.HomeWorld.Value;
+			ReadOnlySeString name = ((World)(ref value)).Name;
+			string homeWorldName = ((ReadOnlySeString)(ref name)).ExtractText();
+			string text = _lodestoneId.Trim();
+			if (text.Length == 0 || !text.All(char.IsAsciiDigit))
 			{
 				_verifyStatus = "Enter your numeric Lodestone character ID first (the number in your Lodestone profile URL). Digits only.";
 				return;
 			}
-			VerifyStartResponse response = await _client.VerifyStartAsync(new VerifyStartRequest(2, lodestoneId, name, homeWorldName, localContentId), CancellationToken.None);
-			if ((object)response == null)
+			VerifyStartResponse verifyStartResponse = await _client.VerifyStartAsync(new VerifyStartRequest(2, text, textValue, homeWorldName, num), CancellationToken.None);
+			if ((object)verifyStartResponse == null)
 			{
 				_verifyStatus = "Could not start verification. Check the ID is yours and unclaimed - and note free-trial characters cannot verify (no Lodestone profile).";
 				return;
 			}
-			_verifyCode = response.Code;
+			_verifyCode = verifyStartResponse.Code;
 			_verifyStatus = "";
 		}
 		catch (Exception ex)
@@ -353,8 +359,8 @@ public sealed class SettingsWindow : Window
 		_verifyBusy = true;
 		try
 		{
-			VerifyCompleteResponse response = await _client.VerifyCompleteAsync(CancellationToken.None);
-			if ((object)response != null && response.Verified)
+			VerifyCompleteResponse verifyCompleteResponse = await _client.VerifyCompleteAsync(CancellationToken.None);
+			if ((object)verifyCompleteResponse != null && verifyCompleteResponse.Verified)
 			{
 				_state.SetRegistration(RegistrationStatus.Verified);
 				_verifyStatus = "Verified! Your uploads go live immediately now.";
@@ -362,7 +368,7 @@ public sealed class SettingsWindow : Window
 			}
 			else
 			{
-				_verifyStatus = "Not verified: " + VerifyReasonText(response?.Reason);
+				_verifyStatus = "Not verified: " + VerifyReasonText(verifyCompleteResponse?.Reason);
 			}
 		}
 		catch (Exception ex)

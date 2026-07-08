@@ -6,7 +6,9 @@ using Dalamud.Game.ClientState.Objects.SubKinds;
 using Dalamud.Game.ClientState.Objects.Types;
 using Dalamud.Game.Gui.ContextMenu;
 using Dalamud.Game.Gui.PartyFinder.Types;
+using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Plugin.Services;
+using Dalamud.Utility;
 using Echo.Core;
 using Echo.Wire;
 using FFXIVClientStructs.FFXIV.Client.Game.Character;
@@ -62,18 +64,37 @@ internal sealed class NameCacheCollector(IFramework framework, IPartyFinderGui p
 
 	private void OnMenuOpened(IMenuOpenedArgs args)
 	{
-		//IL_0041: Unknown result type (might be due to invalid IL or missing references)
-		//IL_0046: Unknown result type (might be due to invalid IL or missing references)
+		//IL_0043: Unknown result type (might be due to invalid IL or missing references)
+		//IL_0048: Unknown result type (might be due to invalid IL or missing references)
+		//IL_0061: Unknown result type (might be due to invalid IL or missing references)
+		//IL_0066: Unknown result type (might be due to invalid IL or missing references)
+		//IL_0076: Unknown result type (might be due to invalid IL or missing references)
+		//IL_008d: Expected O, but got Unknown
+		//IL_00aa: Unknown result type (might be due to invalid IL or missing references)
+		//IL_00af: Unknown result type (might be due to invalid IL or missing references)
 		try
 		{
+			MenuTarget target = ((IMenuArgs)args).Target;
+			MenuTargetDefault val = (MenuTargetDefault)(object)((target is MenuTargetDefault) ? target : null);
+			if (val == null || val.TargetContentId == 0L || val.TargetName.Length == 0)
+			{
+				return;
+			}
+			if (state.Snapshot().ContextMenuLinkEnabled)
+			{
+				string url = ProfileLink.For(val.TargetHomeWorld.RowId, val.TargetName);
+				args.AddMenuItem(new MenuItem
+				{
+					Name = SeString.op_Implicit("View on EchoVault"),
+					OnClicked = delegate
+					{
+						Util.OpenLink(url);
+					}
+				});
+			}
 			if (Enabled())
 			{
-				MenuTarget target = ((IMenuArgs)args).Target;
-				MenuTargetDefault t = (MenuTargetDefault)(object)((target is MenuTargetDefault) ? target : null);
-				if (t != null && t.TargetContentId != 0L && t.TargetName.Length != 0)
-				{
-					_queue.Enqueue(new CapturedPlayer(t.TargetContentId, t.TargetName, t.TargetHomeWorld.RowId, 0u, 0, 0f, 0f, 0f, 0, 0, null, null, "namecache", 0uL, 0, 0, null, 0uL, 0uL));
-				}
+				_queue.Enqueue(new CapturedPlayer(val.TargetContentId, val.TargetName, val.TargetHomeWorld.RowId, 0u, 0, 0f, 0f, 0f, 0, 0, null, null, "namecache", 0uL, 0, 0, null, 0uL, 0uL));
 			}
 		}
 		catch (Exception ex)
@@ -84,10 +105,10 @@ internal sealed class NameCacheCollector(IFramework framework, IPartyFinderGui p
 
 	private bool Enabled()
 	{
-		PluginStateSnapshot snap = state.Snapshot();
-		if (snap.CaptureEnabled && snap.NameCacheCaptureEnabled)
+		PluginStateSnapshot pluginStateSnapshot = state.Snapshot();
+		if (pluginStateSnapshot.CaptureEnabled && pluginStateSnapshot.NameCacheCaptureEnabled)
 		{
-			return snap.ServerAllowsIngest;
+			return pluginStateSnapshot.ServerAllowsIngest;
 		}
 		return false;
 	}
@@ -100,21 +121,21 @@ internal sealed class NameCacheCollector(IFramework framework, IPartyFinderGui p
 			{
 				return;
 			}
-			IPlayerCharacter local = objectTable.LocalPlayer;
-			if (local == null)
+			IPlayerCharacter localPlayer = objectTable.LocalPlayer;
+			if (localPlayer == null)
 			{
 				return;
 			}
-			ulong localContentId = ReadLocalContentId(local);
-			List<CapturedPlayer> captured = new List<CapturedPlayer>();
-			CapturedPlayer p;
-			while (captured.Count < 50 && _queue.TryDequeue(out p))
+			ulong localContentId = ReadLocalContentId(localPlayer);
+			List<CapturedPlayer> list = new List<CapturedPlayer>();
+			CapturedPlayer result;
+			while (list.Count < 50 && _queue.TryDequeue(out result))
 			{
-				captured.Add(p);
+				list.Add(result);
 			}
-			foreach (Sighting s in nameCacheEngine.Process(captured, localContentId, DateTimeOffset.UtcNow))
+			foreach (Sighting item in nameCacheEngine.Process(list, localContentId, DateTimeOffset.UtcNow))
 			{
-				outbox.Append(JsonSerializer.Serialize(s, WireJson.Options));
+				outbox.Append(JsonSerializer.Serialize(item, WireJson.Options));
 			}
 		}
 		catch (Exception ex)

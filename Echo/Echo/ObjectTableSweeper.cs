@@ -42,63 +42,63 @@ internal sealed class ObjectTableSweeper(IFramework framework, IObjectTable obje
 	{
 		try
 		{
-			DateTime now = DateTime.UtcNow;
-			bool doSweep = now - _lastSweep >= SweepInterval;
-			bool doDiff = now - _lastDiff >= SpawnDiffInterval;
-			if (!doSweep && !doDiff)
+			DateTime utcNow = DateTime.UtcNow;
+			bool flag = utcNow - _lastSweep >= SweepInterval;
+			bool flag2 = utcNow - _lastDiff >= SpawnDiffInterval;
+			if (!flag && !flag2)
 			{
 				return;
 			}
-			PluginStateSnapshot snap = state.Snapshot();
-			if (!snap.CaptureEnabled || !snap.ServerAllowsIngest)
+			PluginStateSnapshot pluginStateSnapshot = state.Snapshot();
+			if (!pluginStateSnapshot.CaptureEnabled || !pluginStateSnapshot.ServerAllowsIngest)
 			{
 				return;
 			}
-			IPlayerCharacter local = objectTable.LocalPlayer;
-			if (local == null)
+			IPlayerCharacter localPlayer = objectTable.LocalPlayer;
+			if (localPlayer == null)
 			{
 				return;
 			}
-			ushort territory = (ushort)clientState.TerritoryType;
-			state.SetReporter(new ReporterSelf(territory, ((IGameObject)local).Position.X, ((IGameObject)local).Position.Y, ((IGameObject)local).Position.Z));
-			BattleChara* localChara = (BattleChara*)((IGameObject)local).Address;
-			ulong localContentId = ((BattleChara)localChara).ContentId;
-			HashSet<ulong> seen = new HashSet<ulong>();
-			List<CapturedPlayer> sweepCaptured = (doSweep ? new List<CapturedPlayer>() : null);
-			List<CapturedPlayer> spawnCaptured = (doDiff ? new List<CapturedPlayer>() : null);
+			ushort num = (ushort)clientState.TerritoryType;
+			state.SetReporter(new ReporterSelf(num, ((IGameObject)localPlayer).Position.X, ((IGameObject)localPlayer).Position.Y, ((IGameObject)localPlayer).Position.Z));
+			BattleChara* address = (BattleChara*)((IGameObject)localPlayer).Address;
+			ulong contentId = ((BattleChara)address).ContentId;
+			HashSet<ulong> hashSet = new HashSet<ulong>();
+			List<CapturedPlayer> list = (flag ? new List<CapturedPlayer>() : null);
+			List<CapturedPlayer> list2 = (flag2 ? new List<CapturedPlayer>() : null);
 			foreach (IBattleChara playerObject in objectTable.PlayerObjects)
 			{
-				IPlayerCharacter pc = (IPlayerCharacter)(object)((playerObject is IPlayerCharacter) ? playerObject : null);
-				if (pc == null)
+				IPlayerCharacter val = (IPlayerCharacter)(object)((playerObject is IPlayerCharacter) ? playerObject : null);
+				if (val == null)
 				{
 					continue;
 				}
-				BattleChara* chara = (BattleChara*)((IGameObject)pc).Address;
-				ulong contentId = ((BattleChara)chara).ContentId;
-				seen.Add(contentId);
-				if (contentId != localContentId)
+				BattleChara* address2 = (BattleChara*)((IGameObject)val).Address;
+				ulong contentId2 = ((BattleChara)address2).ContentId;
+				hashSet.Add(contentId2);
+				if (contentId2 != contentId)
 				{
-					if (doDiff && !_present.Contains(contentId))
+					if (flag2 && !_present.Contains(contentId2))
 					{
-						spawnCaptured.Add(Capture(pc, chara, territory, "spawn"));
+						list2.Add(Capture(val, address2, num, "spawn"));
 					}
-					if (doSweep)
+					if (flag)
 					{
-						sweepCaptured.Add(Capture(pc, chara, territory, "sweep"));
+						list.Add(Capture(val, address2, num, "sweep"));
 					}
 				}
 			}
-			if (doDiff)
+			if (flag2)
 			{
-				_lastDiff = now;
+				_lastDiff = utcNow;
 				_present.Clear();
-				_present.UnionWith(seen);
-				Emit(captureEngine, spawnCaptured, localContentId);
+				_present.UnionWith(hashSet);
+				Emit(captureEngine, list2, contentId);
 			}
-			if (doSweep)
+			if (flag)
 			{
-				_lastSweep = now;
-				Emit(captureEngine, sweepCaptured, localContentId);
+				_lastSweep = utcNow;
+				Emit(captureEngine, list, contentId);
 				state.SetOutboxDepth(outbox.Count());
 			}
 		}
@@ -114,9 +114,9 @@ internal sealed class ObjectTableSweeper(IFramework framework, IObjectTable obje
 		{
 			return;
 		}
-		foreach (Sighting sighting in engine.Process(captured, localContentId, DateTimeOffset.UtcNow))
+		foreach (Sighting item in engine.Process(captured, localContentId, DateTimeOffset.UtcNow))
 		{
-			outbox.Append(JsonSerializer.Serialize(sighting, WireJson.Options));
+			outbox.Append(JsonSerializer.Serialize(item, WireJson.Options));
 		}
 	}
 
@@ -134,12 +134,12 @@ internal sealed class ObjectTableSweeper(IFramework framework, IObjectTable obje
 		//IL_0162: Unknown result type (might be due to invalid IL or missing references)
 		//IL_0166: Unknown result type (might be due to invalid IL or missing references)
 		//IL_016b: Unknown result type (might be due to invalid IL or missing references)
-		List<EquipSlot> equipment = new List<EquipSlot>(10);
+		List<EquipSlot> list = new List<EquipSlot>(10);
 		Span<EquipmentModelId> equipmentModelIds = ((DrawDataContainer)(&((BattleChara)chara).DrawData)).EquipmentModelIds;
 		for (int i = 0; i < equipmentModelIds.Length; i++)
 		{
-			ref EquipmentModelId slot = ref equipmentModelIds[i];
-			equipment.Add(new EquipSlot(slot.Id, slot.Variant, slot.Stain0, slot.Stain1));
+			ref EquipmentModelId reference = ref equipmentModelIds[i];
+			list.Add(new EquipSlot(reference.Id, reference.Variant, reference.Stain0, reference.Stain1));
 		}
 		ulong contentId = ((BattleChara)chara).ContentId;
 		string textValue = ((IGameObject)pc).Name.TextValue;
@@ -150,8 +150,8 @@ internal sealed class ObjectTableSweeper(IFramework framework, IObjectTable obje
 		float z = ((IGameObject)pc).Position.Z;
 		byte jobId = (byte)((ICharacter)pc).ClassJob.RowId;
 		byte level = ((ICharacter)pc).Level;
-		string tag = ((ICharacter)pc).CompanyTag.TextValue;
-		string fcTag = ((tag != null && tag.Length > 0) ? tag : null);
+		string textValue2 = ((ICharacter)pc).CompanyTag.TextValue;
+		string fcTag = ((textValue2 != null && textValue2.Length > 0) ? textValue2 : null);
 		byte[] customize = ((((ICharacter)pc).Customize.Length > 0) ? ((ICharacter)pc).Customize.ToArray() : null);
 		ulong accountId = ((BattleChara)chara).AccountId;
 		ushort titleId = ((BattleChara)chara).TitleId;
@@ -174,6 +174,6 @@ internal sealed class ObjectTableSweeper(IFramework framework, IObjectTable obje
 		{
 			obj = string.Empty;
 		}
-		return new CapturedPlayer(contentId, textValue, rowId, rowId2, territory, x, y, z, jobId, level, fcTag, customize, source, accountId, titleId, battalion, equipment, value, value2, (string?)obj);
+		return new CapturedPlayer(contentId, textValue, rowId, rowId2, territory, x, y, z, jobId, level, fcTag, customize, source, accountId, titleId, battalion, list, value, value2, (string?)obj);
 	}
 }

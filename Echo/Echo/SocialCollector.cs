@@ -71,74 +71,74 @@ internal sealed class SocialCollector(IFramework framework, IPartyList partyList
 		//IL_0125: Unknown result type (might be due to invalid IL or missing references)
 		try
 		{
-			PluginStateSnapshot snap = state.Snapshot();
-			if (!snap.CaptureEnabled || !snap.SocialCaptureEnabled || !snap.ServerAllowsIngest)
+			PluginStateSnapshot pluginStateSnapshot = state.Snapshot();
+			if (!pluginStateSnapshot.CaptureEnabled || !pluginStateSnapshot.SocialCaptureEnabled || !pluginStateSnapshot.ServerAllowsIngest)
 			{
 				return;
 			}
-			IPlayerCharacter local = objectTable.LocalPlayer;
-			if (local == null)
+			IPlayerCharacter localPlayer = objectTable.LocalPlayer;
+			if (localPlayer == null)
 			{
 				return;
 			}
-			ulong localContentId = ReadLocalContentId(local);
-			DateTime now = DateTime.UtcNow;
-			List<CapturedPlayer> captured = new List<CapturedPlayer>();
-			if (now - _lastParty >= PartyInterval)
+			ulong localContentId = ReadLocalContentId(localPlayer);
+			DateTime utcNow = DateTime.UtcNow;
+			List<CapturedPlayer> list = new List<CapturedPlayer>();
+			if (utcNow - _lastParty >= PartyInterval)
 			{
-				_lastParty = now;
-				InfoProxyCrossRealm* crossRealm = InfoProxyCrossRealm.Instance();
-				if (crossRealm != null && ((InfoProxyCrossRealm)crossRealm).IsCrossRealm && ((InfoProxyCrossRealm)crossRealm).GroupCount > 0)
+				_lastParty = utcNow;
+				InfoProxyCrossRealm* ptr = InfoProxyCrossRealm.Instance();
+				if (ptr != null && ((InfoProxyCrossRealm)ptr).IsCrossRealm && ((InfoProxyCrossRealm)ptr).GroupCount > 0)
 				{
-					Span<CrossRealmGroup> groups = ((InfoProxyCrossRealm)crossRealm).CrossRealmGroups;
-					Span<CrossRealmGroup> span = groups[..Math.Min(((InfoProxyCrossRealm)crossRealm).GroupCount, groups.Length)];
+					Span<CrossRealmGroup> crossRealmGroups = ((InfoProxyCrossRealm)ptr).CrossRealmGroups;
+					Span<CrossRealmGroup> span = crossRealmGroups[..Math.Min(((InfoProxyCrossRealm)ptr).GroupCount, crossRealmGroups.Length)];
 					for (int i = 0; i < span.Length; i++)
 					{
 						ref CrossRealmGroup reference = ref span[i];
 						CrossRealmGroup val = reference;
-						Span<CrossRealmMember> members = ((CrossRealmGroup)(ref val)).GroupMembers;
-						Span<CrossRealmMember> span2 = members[..Math.Min(reference.GroupMemberCount, members.Length)];
+						Span<CrossRealmMember> groupMembers = ((CrossRealmGroup)(ref val)).GroupMembers;
+						Span<CrossRealmMember> span2 = groupMembers[..Math.Min(reference.GroupMemberCount, groupMembers.Length)];
 						for (int j = 0; j < span2.Length; j++)
 						{
-							ref CrossRealmMember m = ref span2[j];
-							ulong contentId = m.ContentId;
-							CrossRealmMember val2 = m;
-							CapturedPlayer mapped = CrossRealmCapture.TryMap(contentId, ((CrossRealmMember)(ref val2)).NameString, m.HomeWorld, m.CurrentWorld, m.ClassJobId, m.Level, (m.HomeWorld > 0) ? WorldName((uint)m.HomeWorld) : null);
-							if ((object)mapped != null)
+							ref CrossRealmMember reference2 = ref span2[j];
+							ulong contentId = reference2.ContentId;
+							CrossRealmMember val2 = reference2;
+							CapturedPlayer capturedPlayer = CrossRealmCapture.TryMap(contentId, ((CrossRealmMember)(ref val2)).NameString, reference2.HomeWorld, reference2.CurrentWorld, reference2.ClassJobId, reference2.Level, (reference2.HomeWorld > 0) ? WorldName((uint)reference2.HomeWorld) : null);
+							if ((object)capturedPlayer != null)
 							{
-								captured.Add(mapped);
+								list.Add(capturedPlayer);
 							}
 						}
 					}
 				}
 				else
 				{
-					foreach (IPartyMember pm in (IEnumerable<IPartyMember>)partyList)
+					foreach (IPartyMember item in (IEnumerable<IPartyMember>)partyList)
 					{
-						ulong contentId2 = pm.ContentId;
-						uint worldId = pm.World.RowId;
-						if (contentId2 != 0L && worldId != 0)
+						ulong contentId2 = item.ContentId;
+						uint rowId = item.World.RowId;
+						if (contentId2 != 0L && rowId != 0)
 						{
-							captured.Add(new CapturedPlayer(contentId2, pm.Name.TextValue, worldId, worldId, 0, 0f, 0f, 0f, (byte)pm.ClassJob.RowId, pm.Level, null, null, "social", 0uL, 0, 0, null, 0uL, 0uL, WorldName(worldId)));
+							list.Add(new CapturedPlayer(contentId2, item.Name.TextValue, rowId, rowId, 0, 0f, 0f, 0f, (byte)item.ClassJob.RowId, item.Level, null, null, "social", 0uL, 0, 0, null, 0uL, 0uL, WorldName(rowId)));
 						}
 					}
 				}
 			}
-			if (now - _lastRoster >= RosterInterval)
+			if (utcNow - _lastRoster >= RosterInterval)
 			{
-				_lastRoster = now;
-				CollectProxy((InfoProxyId)15, captured);
-				CollectProxy((InfoProxyId)6, captured);
-				CollectProxy((InfoProxyId)4, captured);
-				CollectProxy((InfoProxyId)31, captured);
+				_lastRoster = utcNow;
+				CollectProxy((InfoProxyId)15, list);
+				CollectProxy((InfoProxyId)6, list);
+				CollectProxy((InfoProxyId)4, list);
+				CollectProxy((InfoProxyId)31, list);
 			}
-			if (captured.Count == 0)
+			if (list.Count == 0)
 			{
 				return;
 			}
-			foreach (Sighting s in socialEngine.Process(captured, localContentId, DateTimeOffset.UtcNow))
+			foreach (Sighting item2 in socialEngine.Process(list, localContentId, DateTimeOffset.UtcNow))
 			{
-				outbox.Append(JsonSerializer.Serialize(s, WireJson.Options));
+				outbox.Append(JsonSerializer.Serialize(item2, WireJson.Options));
 			}
 		}
 		catch (Exception ex)
@@ -152,26 +152,26 @@ internal sealed class SocialCollector(IFramework framework, IPartyList partyList
 		//IL_000d: Unknown result type (might be due to invalid IL or missing references)
 		//IL_004e: Unknown result type (might be due to invalid IL or missing references)
 		//IL_0053: Unknown result type (might be due to invalid IL or missing references)
-		InfoModule* module = InfoModule.Instance();
-		if (module == null)
+		InfoModule* ptr = InfoModule.Instance();
+		if (ptr == null)
 		{
 			return;
 		}
-		InfoProxyCommonList* proxy = (InfoProxyCommonList*)((InfoModule)module).GetInfoProxyById(id);
-		if (proxy == null)
+		InfoProxyCommonList* infoProxyById = (InfoProxyCommonList*)((InfoModule)ptr).GetInfoProxyById(id);
+		if (infoProxyById == null)
 		{
 			return;
 		}
-		ReadOnlySpan<CharacterData> charDataSpan = ((InfoProxyCommonList)proxy).CharDataSpan;
+		ReadOnlySpan<CharacterData> charDataSpan = ((InfoProxyCommonList)infoProxyById).CharDataSpan;
 		for (int i = 0; i < charDataSpan.Length; i++)
 		{
-			ref readonly CharacterData data = ref charDataSpan[i];
-			ulong contentId = data.ContentId;
-			uint worldId = data.HomeWorld;
-			if (contentId != 0L && worldId != 0)
+			ref readonly CharacterData reference = ref charDataSpan[i];
+			ulong contentId = reference.ContentId;
+			uint homeWorld = reference.HomeWorld;
+			if (contentId != 0L && homeWorld != 0)
 			{
-				CharacterData val = data;
-				captured.Add(new CapturedPlayer(contentId, ((CharacterData)(ref val)).NameString, worldId, worldId, 0, 0f, 0f, 0f, data.Job, 0, null, null, "social", data.AccountId, 0, 0, null, 0uL, 0uL, WorldName(worldId)));
+				CharacterData val = reference;
+				captured.Add(new CapturedPlayer(contentId, ((CharacterData)(ref val)).NameString, homeWorld, homeWorld, 0, 0f, 0f, 0f, reference.Job, 0, null, null, "social", reference.AccountId, 0, 0, null, 0uL, 0uL, WorldName(homeWorld)));
 			}
 		}
 	}
